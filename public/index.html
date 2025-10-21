@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>麻雀待ち牌テスト</title>
+<style>
+  body {
+    text-align: center;
+    font-family: sans-serif;
+    background-color: #f8f9fa;
+  }
+
+  h1 {
+    margin-bottom: 20px;
+  }
+
+  #question-image {
+    width: 1100px;
+    max-width: 95%;
+    height: auto;
+    margin-bottom: 20px;
+  }
+
+  .choice-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .choice-row img {
+    margin: 2px;
+    width: 100px;
+    height: 120px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 5px;
+    transition: all 0.2s;
+  }
+
+  .choice-row img.selected {
+    border-color: #007bff;
+    box-shadow: 0 0 6px #007bff;
+  }
+
+  button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+    border: none;
+    border-radius: 6px;
+    background-color: #007bff;
+    color: white;
+    transition: 0.2s;
+  }
+
+  button:hover {
+    background-color: #0056b3;
+  }
+
+  #result {
+    font-size: 22px;
+    margin-top: 20px;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<h1>麻雀待ち牌テスト</h1>
+
+<img src="images/q1.png" alt="問題の手牌" id="question-image">
+
+<div id="choices-container"></div>
+
+<button id="submit-btn" onclick="submitAnswer()" style="display:none;">送信</button>
+<button id="next-btn" onclick="nextQuestion()">次の問題</button>
+
+<p id="result"></p>
+
+<script>
+  const totalChoices = 34; // 全34種類の牌画像を使用
+
+  // 各問題データ
+  const questions = [
+    { img:'images/q1.png', correct:['a11','a12','a13'] },
+    { img:'images/q2.png', correct:['a17','a19','a22'] },
+    { img:'images/q3.png', correct:['a1','a4','a7','a8'] },
+    { img:'images/q4.png', correct:['a3','a4','a5','a6','a7'] }
+    // ここにq5〜q20まで追加できる
+  ];
+
+  let currentQuestion = 0;
+  let selectedChoices = [];
+
+  const container = document.getElementById('choices-container');
+  const submitBtn = document.getElementById('submit-btn');
+  const nextBtn = document.getElementById('next-btn');
+  const resultEl = document.getElementById('result');
+
+  // 選択肢画像の配置
+  function loadChoices() {
+    const rows = [9,9,9,7];
+    let count = 1;
+    rows.forEach(rowCount => {
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'choice-row';
+      for(let i=0; i<rowCount; i++) {
+        if(count > totalChoices) break;
+        const img = document.createElement('img');
+        img.src = `images/a${count}.png`;
+        img.id = `a${count}`;
+        img.onclick = () => toggleSelect(img.id);
+        rowDiv.appendChild(img);
+        count++;
+      }
+      container.appendChild(rowDiv);
+    });
+  }
+
+  // 牌選択のON/OFF
+  function toggleSelect(id) {
+    const index = selectedChoices.indexOf(id);
+    const imgEl = document.getElementById(id);
+    if(index === -1) {
+      selectedChoices.push(id);
+      imgEl.classList.add('selected');
+    } else {
+      selectedChoices.splice(index,1);
+      imgEl.classList.remove('selected');
+    }
+  }
+
+  // 回答送信処理
+  function submitAnswer() {
+    const correctSet = new Set(questions[currentQuestion].correct);
+    const selectedSet = new Set(selectedChoices);
+    let allCorrect = true;
+
+    correctSet.forEach(ans => { if(!selectedSet.has(ans)) allCorrect = false; });
+    selectedSet.forEach(sel => { if(!correctSet.has(sel)) allCorrect = false; });
+
+    if(allCorrect) {
+      resultEl.textContent = '正解！🎉';
+      resultEl.style.color = 'green';
+    } else {
+      resultEl.textContent = '不正解…';
+      resultEl.style.color = 'red';
+    }
+
+    // 結果をサーバーに送信
+    sendResultToServer(allCorrect);
+  }
+
+  // サーバーにJSON送信
+  function sendResultToServer(isCorrect) {
+    const payload = {
+      question: currentQuestion + 1,
+      selected: selectedChoices,
+      correct: questions[currentQuestion].correct,
+      result: isCorrect ? '正解' : '不正解',
+      timestamp: new Date().toISOString()
+    };
+
+    fetch('/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(data => console.log('結果送信成功:', data))
+    .catch(err => console.error('送信エラー:', err));
+  }
+
+  // 次の問題へ
+  function nextQuestion() {
+    if(currentQuestion < questions.length - 1) {
+      currentQuestion++;
+      selectedChoices = [];
+      resultEl.textContent = '';
+      document.getElementById('question-image').src = questions[currentQuestion].img;
+
+      for(let i=1; i<=totalChoices; i++) {
+        document.getElementById(`a${i}`).classList.remove('selected');
+      }
+
+      if(currentQuestion === questions.length - 1){
+        nextBtn.style.display = 'none';
+        submitBtn.style.display = 'inline-block';
+      } else {
+        nextBtn.style.display = 'inline-block';
+        submitBtn.style.display = 'none';
+      }
+    }
+  }
+
+  loadChoices();
+  
+  // 制限時間設定（例：60秒）
+let remainingTime = 60;
+const timerDisplay = document.createElement('p');
+timerDisplay.id = 'timer';
+timerDisplay.style.fontSize = '20px';
+timerDisplay.style.fontWeight = 'bold';
+document.body.insertBefore(timerDisplay, document.getElementById('question-image'));
+
+// カウントダウン開始
+const timerId = setInterval(() => {
+  timerDisplay.textContent = `残り時間: ${remainingTime} 秒`;
+  remainingTime--;
+  if (remainingTime < 0) {
+    clearInterval(timerId);
+    alert('時間切れです。自動で送信します。');
+    submitAnswer();
+  }
+}, 1000);
+
+</script>
+
+</body>
+</html>
