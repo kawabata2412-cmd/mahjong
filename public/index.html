@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>麻雀待ち牌テスト</title>
 <style>
+  /* --- 全体設定 --- */
   body {
     text-align: center;
     font-family: sans-serif;
@@ -21,11 +22,11 @@
     margin-bottom: 20px;
   }
 
+  /* --- 選択肢 --- */
   .choice-row {
     display: flex;
     justify-content: center;
     margin-bottom: 10px;
-    flex-wrap: wrap;
   }
 
   .choice-row img {
@@ -43,6 +44,16 @@
     box-shadow: 0 0 6px #007bff;
   }
 
+  /* --- フッター --- */
+  .ema-footer {
+    position: fixed;
+    right: 10px;
+    bottom: 12px;
+    font-size: 30px;
+    color: #666;
+  }
+
+  /* --- ボタン --- */
   button {
     margin-top: 15px;
     padding: 10px 20px;
@@ -59,164 +70,293 @@
     background-color: #0056b3;
   }
 
-  #result {
-    font-size: 22px;
-    margin-top: 20px;
+  /* --- タイマー --- */
+  #timer {
+    font-size: 20px;
     font-weight: bold;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  /* --- スマホ対応 --- */
+  @media (max-width: 600px) {
+    #question-image {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .choice-row {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .choice-row img {
+      width: 36px;
+      height: 44px;
+      margin: 2px;
+      border-radius: 4px;
+    }
+
+    button {
+      font-size: 20px;   /* ボタン文字大きめ */
+      padding: 14px 24px; /* ボタン自体大きめ */
+    }
+
+    .ema-footer {
+      font-size: 20px;
+      right: 8px;
+      bottom: 8px;
+    }
   }
 </style>
 </head>
 <body>
 
-<h1>麻雀待ち牌テスト</h1>
+<!-- ---------------- 表紙ページ ---------------- -->
+<div id="cover-page">
+  <h1>麻雀待ち牌テスト</h1>
+  <p>名前を入力してください：</p>
+  <input type="text" id="user-name" placeholder="名前">
+  <p>問題数: 15問 / 制限時間: 2分半</p>
+  <p>回答は選択式。(複数選択可)<br>
+ 「次へ」ボタンを押すとその問題には戻れない。<br>
+ 制限時間が過ぎると強制終了。(時間は例題の後から計測開始)</p>
+  <button onclick="goToExample()">例題へ</button>
+  <div class="ema-footer">EMA</div>
+</div>
 
-<img src="images/q1.png" alt="問題の手牌" id="question-image">
+<!-- ---------------- 例題ページ ---------------- -->
+<div id="example-page" class="hidden">
+  <h1>例題</h1>
+  <p>選択肢を選んで「次へ」を押してください。</p>
+  <img src="images/example.png" id="example-image">
+  <p id="example-instruction" style="font-size:16px; font-weight:bold; margin:10px 0;">
+  以下から選択してください。(複数回答可)
+  </p>
+  <div id="example-choices-container"></div>
+  <button onclick="startMainTest()">本番テストへ</button>
+  <div class="ema-footer">EMA</div>
+</div>
 
-<div id="choices-container"></div>
+<!-- ---------------- 本番テストページ ---------------- -->
+<div id="test-page" class="hidden">
+  <h1>麻雀待ち牌テスト</h1>
+  <p id="timer"></p>
+  <p id="question-number"></p>
+  <img src="" alt="問題の手牌" id="question-image">
+  <p id="example-instruction" style="font-size:16px; font-weight:bold; margin:10px 0;">
+  以下から選択してください。(複数回答可)
+  </p>
+  <div id="choices-container"></div>
+  <button id="next-btn" onclick="nextQuestion()">次の問題</button>
+  <div class="ema-footer">EMA</div>
+</div>
 
-<button id="submit-btn" onclick="submitAnswer()" style="display:none;">送信</button>
-<button id="next-btn" onclick="nextQuestion()">次の問題</button>
-
-<p id="result"></p>
+<!-- ---------------- Netlifyフォーム ---------------- -->
+<form name="mahjong-results" method="POST" data-netlify="true" hidden>
+  <input type="hidden" name="name">
+  <input type="hidden" name="question">
+  <input type="hidden" name="selected">
+  <input type="hidden" name="correct">
+  <input type="hidden" name="result">
+  <input type="hidden" name="timestamp">
+  <input type="hidden" name="elapsedTime">
+</form>
 
 <script>
-  const totalChoices = 34; // 全34種類の牌画像を使用
+const totalChoices = 34;
+const totalQuestions = 15;
 
-  // 各問題データ
-  const questions = [
-    { img:'images/q1.png', correct:['a11','a12','a13'] },
-    { img:'images/q2.png', correct:['a17','a19','a22'] },
-    { img:'images/q3.png', correct:['a1','a4','a7','a8'] },
-    { img:'images/q4.png', correct:['a3','a4','a5','a6','a7'] }
-    // ここにq5〜q20まで追加できる
-  ];
+const questions = [
+  { img:'images/q1.png', correct:['a11','a12','a13'] },
+  { img:'images/q2.png', correct:['a17','a19','a22'] },
+  { img:'images/q3.png', correct:['a1','a4','a7','a8'] },
+  { img:'images/q4.png', correct:['a3','a4','a5','a6','a7'] },
+  { img:'images/q5.png', correct:['a2','a5','a9'] },
+  { img:'images/q6.png', correct:['a6','a10','a11'] },
+  { img:'images/q7.png', correct:['a3','a8','a12'] },
+  { img:'images/q8.png', correct:['a1','a7','a9'] },
+  { img:'images/q9.png', correct:['a4','a5','a13'] },
+  { img:'images/q10.png', correct:['a2','a6','a8'] },
+  { img:'images/q11.png', correct:['a1','a9','a12'] },
+  { img:'images/q12.png', correct:['a5','a10','a11'] },
+  { img:'images/q13.png', correct:['a3','a7','a13'] },
+  { img:'images/q14.png', correct:['a2','a6','a8'] },
+  { img:'images/q15.png', correct:['a1','a4','a12'] }
+];
 
-  let currentQuestion = 0;
-  let selectedChoices = [];
+let currentQuestion = 0;
+let selectedChoices = [];
+let startTime;
+let timerId;
+let allAnswers = [];
 
-  const container = document.getElementById('choices-container');
-  const submitBtn = document.getElementById('submit-btn');
-  const nextBtn = document.getElementById('next-btn');
-  const resultEl = document.getElementById('result');
+// 表紙 → 例題
+function goToExample() {
+  const name = document.getElementById('user-name').value.trim();
+  if(name === '') { alert('名前を入力してください'); return; }
+  window.userName = name;
+  document.getElementById('cover-page').classList.add('hidden');
+  document.getElementById('example-page').classList.remove('hidden');
+  loadExampleChoices();
+}
 
-  // 選択肢画像の配置
-  function loadChoices() {
-    const rows = [9,9,9,7];
-    let count = 1;
-    rows.forEach(rowCount => {
-      const rowDiv = document.createElement('div');
-      rowDiv.className = 'choice-row';
-      for(let i=0; i<rowCount; i++) {
-        if(count > totalChoices) break;
-        const img = document.createElement('img');
-        img.src = `images/a${count}.png`;
-        img.id = `a${count}`;
-        img.onclick = () => toggleSelect(img.id);
-        rowDiv.appendChild(img);
-        count++;
-      }
-      container.appendChild(rowDiv);
-    });
-  }
-
-  // 牌選択のON/OFF
-  function toggleSelect(id) {
-    const index = selectedChoices.indexOf(id);
-    const imgEl = document.getElementById(id);
-    if(index === -1) {
-      selectedChoices.push(id);
-      imgEl.classList.add('selected');
-    } else {
-      selectedChoices.splice(index,1);
-      imgEl.classList.remove('selected');
+// 例題選択肢
+function loadExampleChoices() {
+  const container = document.getElementById('example-choices-container');
+  container.innerHTML = '';
+  const rows = [9,9,9,7];
+  let count = 1;
+  rows.forEach(rowCount => {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'choice-row';
+    for(let i=0;i<rowCount;i++){
+      if(count>totalChoices) break;
+      const img = document.createElement('img');
+      img.src = `images/a${count}.png`;
+      img.id = `ex${count}`;
+      img.onclick = ()=>toggleSelectExample(img.id);
+      rowDiv.appendChild(img);
+      count++;
     }
-  }
+    container.appendChild(rowDiv);
+  });
+}
 
-  // 回答送信処理
-  function submitAnswer() {
-    const correctSet = new Set(questions[currentQuestion].correct);
-    const selectedSet = new Set(selectedChoices);
-    let allCorrect = true;
+let selectedExample = [];
+function toggleSelectExample(id){
+  const index = selectedExample.indexOf(id);
+  const imgEl = document.getElementById(id);
+  if(index===-1){ selectedExample.push(id); imgEl.classList.add('selected'); }
+  else { selectedExample.splice(index,1); imgEl.classList.remove('selected'); }
+}
 
-    correctSet.forEach(ans => { if(!selectedSet.has(ans)) allCorrect = false; });
-    selectedSet.forEach(sel => { if(!correctSet.has(sel)) allCorrect = false; });
-
-    if(allCorrect) {
-      resultEl.textContent = '正解！🎉';
-      resultEl.style.color = 'green';
-    } else {
-      resultEl.textContent = '不正解…';
-      resultEl.style.color = 'red';
-    }
-
-    // 結果をサーバーに送信
-    sendResultToServer(allCorrect);
-  }
-
-  // サーバーにJSON送信
-  function sendResultToServer(isCorrect) {
-    const payload = {
-      question: currentQuestion + 1,
-      selected: selectedChoices,
-      correct: questions[currentQuestion].correct,
-      result: isCorrect ? '正解' : '不正解',
-      timestamp: new Date().toISOString()
-    };
-
-    fetch('/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(data => console.log('結果送信成功:', data))
-    .catch(err => console.error('送信エラー:', err));
-  }
-
-  // 次の問題へ
-  function nextQuestion() {
-    if(currentQuestion < questions.length - 1) {
-      currentQuestion++;
-      selectedChoices = [];
-      resultEl.textContent = '';
-      document.getElementById('question-image').src = questions[currentQuestion].img;
-
-      for(let i=1; i<=totalChoices; i++) {
-        document.getElementById(`a${i}`).classList.remove('selected');
-      }
-
-      if(currentQuestion === questions.length - 1){
-        nextBtn.style.display = 'none';
-        submitBtn.style.display = 'inline-block';
-      } else {
-        nextBtn.style.display = 'inline-block';
-        submitBtn.style.display = 'none';
-      }
-    }
-  }
-
+// 本番テスト開始
+function startMainTest(){
+  alert("本番テストを開始します。時間は2分半です。");
+  document.getElementById('example-page').classList.add('hidden');
+  document.getElementById('test-page').classList.remove('hidden');
+  currentQuestion = 0;
+  selectedChoices = [];
+  allAnswers = [];
+  startTime = Date.now();
   loadChoices();
-  
-  // 制限時間設定（例：60秒）
-let remainingTime = 60;
-const timerDisplay = document.createElement('p');
-timerDisplay.id = 'timer';
-timerDisplay.style.fontSize = '20px';
-timerDisplay.style.fontWeight = 'bold';
-document.body.insertBefore(timerDisplay, document.getElementById('question-image'));
+  showQuestion();
+  startTimer();
+}
 
-// カウントダウン開始
-const timerId = setInterval(() => {
-  timerDisplay.textContent = `残り時間: ${remainingTime} 秒`;
-  remainingTime--;
-  if (remainingTime < 0) {
-    clearInterval(timerId);
-    alert('時間切れです。自動で送信します。');
-    submitAnswer();
+// 選択肢読み込み
+function loadChoices(){
+  const container = document.getElementById('choices-container');
+  container.innerHTML='';
+  const rows = [9,9,9,7];
+  let count=1;
+  rows.forEach(rowCount=>{
+    const rowDiv = document.createElement('div');
+    rowDiv.className='choice-row';
+    for(let i=0;i<rowCount;i++){
+      if(count>totalChoices) break;
+      const img=document.createElement('img');
+      img.src=`images/a${count}.png`;
+      img.id=`a${count}`;
+      img.onclick=()=>toggleSelect(img.id);
+      rowDiv.appendChild(img);
+      count++;
+    }
+    container.appendChild(rowDiv);
+  });
+}
+
+function toggleSelect(id){
+  const index = selectedChoices.indexOf(id);
+  const imgEl = document.getElementById(id);
+  if(index===-1){ selectedChoices.push(id); imgEl.classList.add('selected'); }
+  else { selectedChoices.splice(index,1); imgEl.classList.remove('selected'); }
+}
+
+// 問題表示
+function showQuestion(){
+  document.getElementById('question-image').src = questions[currentQuestion].img;
+  document.getElementById('question-number').textContent = `問題 ${currentQuestion + 1} / ${totalQuestions}`;
+}
+
+// タイマー
+function startTimer(){
+  let remainingTime = 150;
+  const timerDisplay = document.getElementById('timer');
+  timerId = setInterval(()=>{
+    timerDisplay.textContent=`残り時間: ${remainingTime} 秒`;
+    remainingTime--;
+    if(remainingTime<0){
+      clearInterval(timerId);
+      finishTest();
+    }
+  },1000);
+}
+
+// 次の問題
+function nextQuestion(){
+  submitAnswer();
+  currentQuestion++;
+  if(currentQuestion>=totalQuestions){
+    finishTest();
+    return;
   }
-}, 1000);
+  selectedChoices=[];
+  for(let i=1;i<=totalChoices;i++){
+    const el = document.getElementById(`a${i}`);
+    if(el) el.classList.remove('selected');
+  }
+  showQuestion();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
+// 回答送信（各問題記録）
+function submitAnswer(){
+  const correctSet = new Set(questions[currentQuestion].correct);
+  const selectedSet = new Set(selectedChoices);
+  let allCorrect=true;
+  correctSet.forEach(ans=>{ if(!selectedSet.has(ans)) allCorrect=false; });
+  selectedSet.forEach(sel=>{ if(!correctSet.has(sel)) allCorrect=false; });
+
+  allAnswers.push({
+    question: currentQuestion + 1,
+    selected: [...selectedChoices],
+    correct: questions[currentQuestion].correct,
+    result: allCorrect ? '正解' : '不正解',
+    elapsedTime: Math.floor((Date.now()-startTime)/1000)
+  });
+}
+
+// テスト終了（全問まとめ送信）
+function finishTest(){
+  clearInterval(timerId);
+
+  const form=document.forms['mahjong-results'];
+  form.name.value=window.userName;
+  form.question.value = 'まとめ送信';
+  form.selected.value = allAnswers.map(a=>a.selected.join('|')).join(';');
+  form.correct.value = allAnswers.map(a=>a.correct.join('|')).join(';');
+  form.result.value = allAnswers.map(a=>a.result).join(';');
+  form.timestamp.value=new Date().toISOString();
+  form.elapsedTime.value = Math.floor((Date.now()-startTime)/1000);
+
+  fetch("/",{
+    method:"POST",
+    headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body:new URLSearchParams(new FormData(form)).toString()
+  }).then(()=>{
+    console.log("全問まとめ送信完了");
+    alert("テストは終了です。このウィンドウは自動で閉じます。");
+    window.close();
+  }).catch(err=>{
+    console.error("送信エラー:",err);
+    alert("送信中にエラーが発生しました。");
+    window.close();
+  });
+}
 </script>
-
 </body>
 </html>
