@@ -4,25 +4,16 @@
 <meta charset="UTF-8">
 <title>麻雀待ち牌テスト</title>
 <style>
-  /* --- 全体設定 --- */
   body {
     text-align: center;
     font-family: sans-serif;
     background-color: #f8f9fa;
   }
 
-  h1 {
-    margin-bottom: 20px;
-  }
+  h1 { margin-bottom: 20px; }
 
-  #question-image {
-    width: 1100px;
-    max-width: 95%;
-    height: auto;
-    margin-bottom: 20px;
-  }
+  #question-image { width: 1100px; max-width: 95%; height: auto; margin-bottom: 20px; }
 
-  /* --- 選択肢 --- */
   .choice-row {
     display: flex;
     justify-content: center;
@@ -44,7 +35,6 @@
     box-shadow: 0 0 6px #007bff;
   }
 
-  /* --- フッター --- */
   .ema-footer {
     position: fixed;
     right: 10px;
@@ -53,7 +43,6 @@
     color: #666;
   }
 
-  /* --- ボタン --- */
   button {
     margin-top: 15px;
     padding: 10px 20px;
@@ -66,95 +55,87 @@
     transition: 0.2s;
   }
 
-  button:hover {
-    background-color: #0056b3;
-  }
+  button:hover { background-color: #0056b3; }
 
-  /* --- タイマー --- */
-  #timer {
-    font-size: 20px;
-    font-weight: bold;
-  }
+  #timer { font-size: 20px; font-weight: bold; }
 
-  .hidden {
-    display: none;
-  }
+  .hidden { display: none; }
 
-  /* --- スマホ対応 --- */
+  table { width: 90%; margin: 0 auto 20px; border-collapse: collapse; }
+  table, th, td { border: 1px solid #ccc; }
+  th, td { padding: 6px; text-align: center; }
+
   @media (max-width: 600px) {
-    #question-image {
-      width: 100%;
-      max-width: 100%;
-    }
-
-    .choice-row {
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .choice-row img {
-      width: 36px;
-      height: 44px;
-      margin: 2px;
-      border-radius: 4px;
-    }
-
-    button {
-      font-size: 20px;   /* ボタン文字大きめ */
-      padding: 14px 24px; /* ボタン自体大きめ */
-    }
-
-    .ema-footer {
-      font-size: 20px;
-      right: 8px;
-      bottom: 8px;
-    }
+    #question-image { width: 100%; max-width: 100%; }
+    .choice-row { flex-wrap: wrap; justify-content: center; }
+    .choice-row img { width: 36px; height: 44px; margin: 2px; border-radius: 4px; }
+    button { font-size: 20px; padding: 14px 24px; }
+    .ema-footer { font-size: 20px; right: 8px; bottom: 8px; }
   }
 </style>
 </head>
 <body>
 
-<!-- ---------------- 表紙ページ ---------------- -->
+<!-- 表紙ページ -->
 <div id="cover-page">
   <h1>麻雀待ち牌テスト</h1>
   <p>名前を入力してください：</p>
   <input type="text" id="user-name" placeholder="名前">
-  <p>問題数: 15問 / 制限時間: 2分半</p>
+  <p>問題数: 15問 / 制限時間: 4分</p>
   <p>回答は選択式。(複数選択可)<br>
- 「次へ」ボタンを押すとその問題には戻れない。<br>
- 制限時間が過ぎると強制終了。(時間は例題の後から計測開始)</p>
+     「次へ」ボタンを押すとその問題には戻れない。<br>
+     制限時間が過ぎると強制終了。(時間は例題の後から計測開始)</p>
   <button onclick="goToExample()">例題へ</button>
   <div class="ema-footer">EMA</div>
 </div>
 
-<!-- ---------------- 例題ページ ---------------- -->
+<!-- 例題ページ -->
 <div id="example-page" class="hidden">
   <h1>例題</h1>
   <p>選択肢を選んで「次へ」を押してください。</p>
   <img src="images/example.png" id="example-image">
-  <p id="example-instruction" style="font-size:16px; font-weight:bold; margin:10px 0;">
-  以下から選択してください。(複数回答可)
+  <p style="font-size:16px; font-weight:bold; margin:10px 0;">
+    以下から選択してください。(複数回答可)
   </p>
   <div id="example-choices-container"></div>
   <button onclick="startMainTest()">本番テストへ</button>
   <div class="ema-footer">EMA</div>
 </div>
 
-<!-- ---------------- 本番テストページ ---------------- -->
+<!-- 本番テストページ -->
 <div id="test-page" class="hidden">
   <h1>麻雀待ち牌テスト</h1>
   <p id="timer"></p>
   <p id="question-number"></p>
   <img src="" alt="問題の手牌" id="question-image">
-  <p id="example-instruction" style="font-size:16px; font-weight:bold; margin:10px 0;">
-  以下から選択してください。(複数回答可)
+  <p style="font-size:16px; font-weight:bold; margin:10px 0;">
+    以下から選択してください。(複数回答可)
   </p>
   <div id="choices-container"></div>
   <button id="next-btn" onclick="nextQuestion()">次の問題</button>
   <div class="ema-footer">EMA</div>
 </div>
 
-<!-- ---------------- Netlifyフォーム ---------------- -->
+<!-- 結果ページ -->
+<div id="result-page" class="hidden">
+  <h1>テスト結果</h1>
+  <p id="summary"></p>
+  <table>
+    <thead>
+      <tr>
+        <th>問題番号</th>
+        <th>あなたの回答</th>
+        <th>正解</th>
+        <th>結果</th>
+        <th>回答時間(秒)</th>
+      </tr>
+    </thead>
+    <tbody id="result-tbody"></tbody>
+  </table>
+  <div class="ema-footer">EMA</div>
+</div>
+
+<!-- Netlifyフォーム -->
 <form name="mahjong-results" method="POST" data-netlify="true" hidden>
   <input type="hidden" name="name">
   <input type="hidden" name="question">
@@ -170,21 +151,21 @@ const totalChoices = 34;
 const totalQuestions = 15;
 
 const questions = [
-  { img:'images/q1.png', correct:['a11','a12','a13'] },
+  { img:'images/q1.png', correct:['a11','a12','a14'] },
   { img:'images/q2.png', correct:['a17','a19','a22'] },
   { img:'images/q3.png', correct:['a1','a4','a7','a8'] },
   { img:'images/q4.png', correct:['a3','a4','a5','a6','a7'] },
-  { img:'images/q5.png', correct:['a2','a5','a9'] },
-  { img:'images/q6.png', correct:['a6','a10','a11'] },
-  { img:'images/q7.png', correct:['a3','a8','a12'] },
-  { img:'images/q8.png', correct:['a1','a7','a9'] },
-  { img:'images/q9.png', correct:['a4','a5','a13'] },
-  { img:'images/q10.png', correct:['a2','a6','a8'] },
-  { img:'images/q11.png', correct:['a1','a9','a12'] },
-  { img:'images/q12.png', correct:['a5','a10','a11'] },
-  { img:'images/q13.png', correct:['a3','a7','a13'] },
-  { img:'images/q14.png', correct:['a2','a6','a8'] },
-  { img:'images/q15.png', correct:['a1','a4','a12'] }
+  { img:'images/q5.png', correct:['a11','a13','a14','a16','a17'] },
+  { img:'images/q6.png', correct:['a3','a4','a6','a9'] },
+  { img:'images/q7.png', correct:['a21','a22','a23','a24'] },
+  { img:'images/q8.png', correct:['a13','a14','a16'] },
+  { img:'images/q9.png', correct:['a6','a7'] },
+  { img:'images/q10.png', correct:['a24','a25','a26','a27'] },
+  { img:'images/q11.png', correct:['a1','a11','a14'] },
+  { img:'images/q12.png', correct:['a4','a19','a22'] },
+  { img:'images/q13.png', correct:['a3','a4','a7','a8'] },
+  { img:'images/q14.png', correct:['a19','a20','a21','a22','a23','a24','a25','a26'] },
+  { img:'images/q15.png', correct:['a11','a14','a15','a16','a17'] }
 ];
 
 let currentQuestion = 0;
@@ -235,7 +216,7 @@ function toggleSelectExample(id){
 
 // 本番テスト開始
 function startMainTest(){
-  alert("本番テストを開始します。時間は2分半です。");
+  alert("本番テストを開始します。時間は4分です。");
   document.getElementById('example-page').classList.add('hidden');
   document.getElementById('test-page').classList.remove('hidden');
   currentQuestion = 0;
@@ -284,7 +265,7 @@ function showQuestion(){
 
 // タイマー
 function startTimer(){
-  let remainingTime = 150;
+  let remainingTime = 240;
   const timerDisplay = document.getElementById('timer');
   timerId = setInterval(()=>{
     timerDisplay.textContent=`残り時間: ${remainingTime} 秒`;
@@ -330,10 +311,11 @@ function submitAnswer(){
   });
 }
 
-// テスト終了（全問まとめ送信）
+// テスト終了（全問まとめ送信 + 結果表示）
 function finishTest(){
   clearInterval(timerId);
 
+  // Netlify送信
   const form=document.forms['mahjong-results'];
   form.name.value=window.userName;
   form.question.value = 'まとめ送信';
@@ -349,12 +331,27 @@ function finishTest(){
     body:new URLSearchParams(new FormData(form)).toString()
   }).then(()=>{
     console.log("全問まとめ送信完了");
-    alert("テストは終了です。このウィンドウは自動で閉じます。");
-    window.close();
   }).catch(err=>{
     console.error("送信エラー:",err);
-    alert("送信中にエラーが発生しました。");
-    window.close();
+  });
+
+  // 結果ページ表示
+  document.getElementById('test-page').classList.add('hidden');
+  document.getElementById('result-page').classList.remove('hidden');
+
+  const totalCorrect = allAnswers.filter(a=>a.result==='正解').length;
+  document.getElementById('summary').textContent = `正解数: ${totalCorrect} / ${totalQuestions}`;
+
+  const tbody = document.getElementById('result-tbody');
+  tbody.innerHTML='';
+  allAnswers.forEach(a=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${a.question}</td>
+                    <td>${a.selected.join(',')}</td>
+                    <td>${a.correct.join(',')}</td>
+                    <td>${a.result}</td>
+                    <td>${a.elapsedTime}</td>`;
+    tbody.appendChild(tr);
   });
 }
 </script>
