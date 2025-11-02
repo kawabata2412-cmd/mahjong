@@ -81,7 +81,7 @@
   <h1>麻雀待ち牌テスト</h1>
   <p>名前を入力してください：</p>
   <input type="text" id="user-name" placeholder="名前">
-  <p>問題数: 15問 / 制限時間: 4分</p>
+  <p>問題数: 15問 / 制限時間: 7分</p>
   <p>回答は選択式。(複数選択可)<br>
      「次へ」ボタンを押すとその問題には戻れない。<br>
      制限時間が過ぎると強制終了。(時間は例題の後から計測開始)</p>
@@ -119,6 +119,7 @@
 <!-- 結果ページ -->
 <div id="result-page" class="hidden">
   <h1>テスト結果</h1>
+  <p id="user-name-display" style="font-size:18px; font-weight:bold;"></p> 
   <p id="summary"></p>
   <table>
     <thead>
@@ -216,7 +217,7 @@ function toggleSelectExample(id){
 
 // 本番テスト開始
 function startMainTest(){
-  alert("本番テストを開始します。時間は4分です。");
+  alert("本番テストを開始します。時間は7分です。");
   document.getElementById('example-page').classList.add('hidden');
   document.getElementById('test-page').classList.remove('hidden');
   currentQuestion = 0;
@@ -265,7 +266,7 @@ function showQuestion(){
 
 // タイマー
 function startTimer(){
-  let remainingTime = 240;
+  let remainingTime = 420;
   const timerDisplay = document.getElementById('timer');
   timerId = setInterval(()=>{
     timerDisplay.textContent=`残り時間: ${remainingTime} 秒`;
@@ -338,6 +339,7 @@ function finishTest(){
   // 結果ページ表示
   document.getElementById('test-page').classList.add('hidden');
   document.getElementById('result-page').classList.remove('hidden');
+  document.getElementById('user-name-display').textContent = `回答者: ${window.userName}`;
 
   const totalCorrect = allAnswers.filter(a=>a.result==='正解').length;
   document.getElementById('summary').textContent = `正解数: ${totalCorrect} / ${totalQuestions}`;
